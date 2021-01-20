@@ -83,6 +83,7 @@ class KISS():
 	CMD_EN_DIAGS    			= 0x13
 	CMD_MODE 		   			= 0x14
 	CMD_INVERT_SD_DETECT 		= 0x15
+	CMD_TEST_TONE		 		= 0x16
 	CMD_PRINT_CONFIG			= 0xF0
 	CMD_LED_INTENSITY			= 0x08
 	CMD_RETURN					= 0xFF
@@ -397,8 +398,17 @@ class KISSInterface(Interface):
 		kiss_command = bytes([KISS.FEND])+bytes([KISS.CMD_INVERT_SD_DETECT])+command+bytes([KISS.FEND])
 		written = self.serial.write(kiss_command)
 		if written != len(kiss_command):
-			raise IOError("Could not configure KISS interface invert_sddetect to "+str(gain))
+			raise IOError("Could not configure KISS interface invert_sddetect to "+str(val))
 
+	def setTestTone(self, val):
+		if val < 0 or val > 2:
+			val = 0
+
+		command = KISS.escape(bytes([val]))
+		kiss_command = bytes([KISS.FEND])+bytes([KISS.CMD_TEST_TONE])+command+bytes([KISS.FEND])
+		written = self.serial.write(kiss_command)
+		if written != len(kiss_command):
+			raise IOError("Could not configure KISS interface test_tone to "+str(val))
 
 	def saveConfig(self):
 		kiss_command = bytes([KISS.FEND])+bytes([KISS.CMD_SAVE_CONFIG])+bytes([0x01])+bytes([KISS.FEND])
@@ -708,6 +718,13 @@ class appRequestHandler(BaseHTTPRequestHandler):
 			kiss_interface.setInvertSdDetect(q_val)
 			request.wfile.write(json.dumps({"response":"ok"}).encode("utf-8"))
 
+		if (request.path.startswith("/settesttone")):
+			request.json_headers()
+			query = parse_qs(urlparse(request.path).query)
+			q_val = int(query["val"][0])
+			kiss_interface.setTestTone(q_val)
+			request.wfile.write(json.dumps({"response":"ok"}).encode("utf-8"))
+
 		if (request.path.startswith("/setgpsmode")):
 			request.json_headers()
 			query = parse_qs(urlparse(request.path).query)
@@ -811,7 +828,10 @@ def open_device(port, baud):
 		return False
 
 def close_device():
-	os._exit(0)
+    if kiss_interface != None:
+        kiss_interface.setTestTone(0)
+        kiss_interface.disableDiagnostics()
+    os._exit(0)
 
 keyfile_exists = False
 entropy_source_exists = False
@@ -937,6 +957,11 @@ def install_entropy_source(path):
 def get_port():
 	return random.randrange(40000,49999,1)
 
+def on_closed():
+    if kiss_interface != None:
+        kiss_interface.setTestTone(0)
+        kiss_interface.disableDiagnostics()
+
 def start_server():
 	retries = 0
 	server_started = False
@@ -956,7 +981,8 @@ def start_server():
 			print("Exception while starting server: "+str(e))
 			pass
 
-	webview.create_window('OpenModem Configuration', 'http://localhost:'+str(port)+'/', width=575, height=600)
+	window = webview.create_window('OpenModem Configuration', 'http://localhost:'+str(port)+'/', width=575, height=600)
+	window.closed += on_closed
 	webview.start()
 
 	os._exit(0)

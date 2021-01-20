@@ -290,6 +290,15 @@ function request_invertsddetect_change() {
 	}
 }
 
+function request_testtone_change() {
+	if (document.connection_state) {
+		var val = jQuery("#c_testtone input:checked").val();
+		console.log("Set test tone to:");
+		console.log(val);
+		jQuery.getJSON("/settesttone?val="+val, function(data) {	});
+	}
+}
+
 function request_aes_change() {
 	if (volume_ok) {
 		var val = jQuery("#c_aes128").checkbox("is checked");
@@ -414,6 +423,7 @@ function init_elements() {
 	jQuery("#c_logtosd").checkbox("setting", "onChange", function() { request_logtosd_change(); });
 	jQuery("#c_aes128").checkbox("setting", "onChange", function() { request_aes_change(); });
 	jQuery("#c_invertsddetect").checkbox("setting", "onChange", function() { request_invertsddetect_change(); });
+	jQuery("#c_testtone input").on("change", function() { request_testtone_change(); });
 
 	jQuery('#p-selection').range({
 		min: 0,
