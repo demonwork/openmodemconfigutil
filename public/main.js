@@ -112,6 +112,7 @@ function update_slider_ingain(val) {
 	if (val < 0) val = 0;
 	if (val > 255) val = 255;
 	jQuery("#ingain-selection").range("set value", val);
+	jQuery("#inputgainvalue").html(val);
 }
 
 function update_slider_outgain(val) {
@@ -119,6 +120,7 @@ function update_slider_outgain(val) {
 	if (val < 0) val = 0;
 	if (val > 255) val = 255;
 	jQuery("#outgain-selection").range("set value", val);
+	jQuery("#outputgainvalue").html(val);
 }
 
 function request_led_change(val) {
@@ -199,6 +201,7 @@ function request_ingain_change(val) {
 		if (val > 255) val = 255;
 		console.log("Setting input gain to:");
 		console.log(val);
+		jQuery("#inputgainvalue").html(val);
 		jQuery.getJSON("/setingain?val="+val, function(data) {
 
 		});
@@ -212,6 +215,7 @@ function request_outgain_change(val) {
 		if (val > 255) val = 255;
 		console.log("Setting output gain to:");
 		console.log(val);
+		jQuery("#outputgainvalue").html(val);
 		jQuery.getJSON("/setoutgain?val="+val, function(data) {
 
 		});
